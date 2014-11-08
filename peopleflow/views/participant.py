@@ -78,6 +78,21 @@ def get_participant(event, nfc_id):
             response = jsonp(error="invalid")
         return response
 
+@app.route('/event/<event>/participants', methods=["GET"])
+@lastuser.requires_permission(['kioskadmin'])
+def get_participants(event):
+        try:
+            participants = Participant.query.all()
+            response = { 'participants': []}
+            for participant in participants:
+                response['participants'] += [
+                    dict(id=participant.id,name=participant.name,email=participant.email,twitter=participant.twitter,nfc_id=participant.nfc_id)
+                    ]
+            return jsonp(response)
+        except:
+            response = jsonp(error="invalid")
+        return response
+
 @app.route('/event/<event>/participant/<participant>/print_card', methods=['POST'])
 @lastuser.requires_permission(['kioskadmin', 'registrations'])
 @load_models(
