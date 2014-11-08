@@ -85,7 +85,7 @@ def get_participant(event, nfc_id):
 def get_participants(event):
         participants = Participant.query.all()
         return jsonp(dict(
-            participants=map(encrypt_participant, participants)
+            participants=dict(map(encrypt_participant, participants))
         ))
 
 @app.route('/event/<event>/participant/<participant>/print_card', methods=['POST'])
