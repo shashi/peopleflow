@@ -53,43 +53,83 @@
 {% block footerscripts %}
 {{ super() }}
 <script type="text/javascript">
-rfid.on( 'tag_placed', function(data) {
-  //timer = window.setTimeout("stop_listening();", 5000);
+var getParticipant = function(barcode){
+    var public = barcode.substr(0, 4), secret = barcode.substr(4, 6);
+    console.log("public: ", public);
+    if (window.localStorage !== undefined){
+        var participant = window.localStorage.getItem(public);
+        if (participant){
+            return JSON.parse(participant);
+        }
+    }
+    return null;
+}
+var storeParticipant = function(participant, target) {
+    var public = "";
+    if (window.localStorage !== undefined){
+        if (target !== undefined) {
+            public = target.substr(-10);
+        } else {
+            for( var i=0; i < 10; i++ )
+                public += String.fromCharCode(32 + Math.floor(Math.random() * 95));
+        }
+        window.localStorage.setItem(public, JSON.stringify(participant));
+        participant['public'] = public;
+        return participant;
+    }
+    return null;
+}
+var code = "";
+window.onkeypress = function(k) {
+    var charcode = (typeof k.which == "number") ? k.which : k.keyCode;
+    if (charcode == 13){
+        if (code.length < 10){
+            // not a barcode
+            code = "";
+            return;
+        }
+        code = code.substr(-10);
+        var tap = getParticipant(code);
+        if(tap !== null){
+            console.log(tap);
+            if (window.localStorage !== undefined) {
+                window.localStorage['tap.' + new Date ] = code +" @ " + window.location.pathname;
+            }
+            code = "";
+            return;
+            url = "/event/{{ event.id }}/participant/"+data['tag_id'];
+            $('input#nfc_id').attr("value",data['tag_id'] );
+            $.getJSON(url, function(data){
+              if(data["error"]){
+                toastr.error(
+                  "This badge is not connected to any user. If you registered and this badge doesn't work, please contact one of the organisers.",
+                  "The badge you tapped is not valid."
+                  );
+              }
+              else{
+                $('div#info').removeClass("hidden");
+                $('div#name').html('<h1>'+data['name']+'</h1>');
+                $('div#email').html('<h2>'+data['email']+'</h2>');
+                $('#info .name').html(data.name);
+                $('#info').modal();
+                setTimeout(function(){
+                  $('#kiosk').submit();
+                }, 5000);
+                interval = window.setInterval(function(){
+                  var tout = $('#kiosk .timeout'); 
+                  tout.html(Number(tout.text()) - 1);
+                }, 1000);
+              };
+            });
+        }
+    } else {
+        code += String.fromCharCode(charcode);
+    }
+}
 
-  if (data['tag_id']) {
-    if (window.localStorage !== undefined) {
-      // Log the tap
-      window.localStorage["tap." + (+new Date)] = data['tag_id'] + " @ " + window.location.pathname;
-    };
-
-    url = "/event/{{ event.id }}/participant/"+data['tag_id'];
-    $('input#nfc_id').attr("value",data['tag_id'] );
-    // $('input#share').removeClass("hidden")
-
-    $.getJSON(url, function(data){
-      if(data["error"]){
-        toastr.error(
-          "This badge is not connected to any user. If you registered and this badge doesn't work, please contact one of the organisers.",
-          "The badge you tapped is not valid."
-          );
-      }
-      else{
-        $('div#info').removeClass("hidden");
-        $('div#name').html('<h1>'+data['name']+'</h1>');
-        $('div#email').html('<h2>'+data['email']+'</h2>');
-        $('#info .name').html(data.name);
-        $('#info').modal();
-        setTimeout(function(){
-          $('#kiosk').submit();
-        }, 5000);
-        interval = window.setInterval(function(){
-          var tout = $('#kiosk .timeout'); 
-          tout.html(Number(tout.text()) - 1);
-        }, 1000);
-      };
-    });
-  }
-});
+storeParticipant (participant = {"email": "sidd" }, target = "#^i3");
+storeParticipant (participant = {"email": "shashi"}, target = "H1L\"");
+storeParticipant (participant = {"email": "kiran"}, target = "Bnu2");
 $(document).ready(function(){
   var img = $('#contact_point #company .logo img')
   img.css({'margin-top': -img.height()/2, 'top': '50%'});
