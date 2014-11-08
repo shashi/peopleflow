@@ -57,25 +57,10 @@ var getParticipant = function(barcode){
     var public = barcode.substr(0, 4), secret = barcode.substr(4, 6);
     console.log("public: ", public);
     if (window.localStorage !== undefined){
-        var participant = window.localStorage.getItem(public);
+        var participant = window.localStorage.getItem('participant.'+public);
         if (participant){
             return JSON.parse(participant);
         }
-    }
-    return null;
-}
-var storeParticipant = function(participant, target) {
-    var public = "";
-    if (window.localStorage !== undefined){
-        if (target !== undefined) {
-            public = target.substr(-10);
-        } else {
-            for( var i=0; i < 10; i++ )
-                public += String.fromCharCode(32 + Math.floor(Math.random() * 95));
-        }
-        window.localStorage.setItem(public, JSON.stringify(participant));
-        participant['public'] = public;
-        return participant;
     }
     return null;
 }
@@ -126,13 +111,35 @@ window.onkeypress = function(k) {
         code += String.fromCharCode(charcode);
     }
 }
-
-storeParticipant (participant = {"email": "sidd" }, target = "#^i3");
-storeParticipant (participant = {"email": "shashi"}, target = "H1L\"");
-storeParticipant (participant = {"email": "kiran"}, target = "Bnu2");
+url = "/event/{{ event.id }}/participants";
+var refreshParticipants = function(){
+    $.getJSON(url, function(data){
+        if(data['error']) {
+            toasttr.error(
+                    "Participants not synced with server.",
+                    "There is a connectivity problem."
+                    );
+        } else {
+            for (var key in window.localStorage){
+                if (key.indexOf("participant.") == 0){
+                    window.localStorage.removeItem(key);
+                }
+            }
+            participants = data['participants'];
+            for (var key in participants){
+                if (!participants.hasOwnProperty(key)){
+                    continue;
+                } 
+                console.log("storing ", participants[key]);
+                window.localStorage.setItem('participant.'+key, JSON.stringify(participants[key]));
+            }
+        }
+    });
+}
 $(document).ready(function(){
   var img = $('#contact_point #company .logo img')
   img.css({'margin-top': -img.height()/2, 'top': '50%'});
+  refreshParticipants();
 });
 
 
