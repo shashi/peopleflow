@@ -4,7 +4,7 @@
 from . import nav
 from .. import app
 from .. import lastuser
-from ..models import db, Event, Participant, encrypt_participant
+from ..models import db, Event, Participant, encrypt_participant, rand_printable_string
 from ..forms import ParticipantForm
 from ..helpers.printlabel import printlabel, make_label_content
 from datetime import datetime, timedelta
