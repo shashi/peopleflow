@@ -57,11 +57,10 @@ def encrypt_participant(row):
 
     # Encrypt each row
     aes = AES.new(pad_secret(row.secret, 16), AES.MODE_CBC, IV456)
-    return dict(zip(FIELDS,
+    return row.public, dict(zip(FIELDS,
                     [encrypt_field(aes, str(getattr(row, f))) \
                         for f in FIELDS])
                 , id=row.id
-                , public=row.public
            )
 
 class Participant(db.Model, BaseMixin):
