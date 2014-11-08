@@ -1,6 +1,7 @@
 
 from . import db, BaseMixin
 from datetime import datetime
+import random
 
 
 TSHIRT_SIZES = [
@@ -14,6 +15,13 @@ TSHIRT_SIZES = [
     ('7', u'XXXL'),
     ]
 
+PRINTABLE_ASCII = map(chr, range(32, 127))
+
+def rand_printable_string(length):
+    chars = ['x'] * length
+    for i in range(0, length):
+        chars[i] = random.choice(PRINTABLE_ASCII)
+    return "".join(chars)
 
 class Participant(db.Model, BaseMixin):
   
@@ -43,8 +51,12 @@ class Participant(db.Model, BaseMixin):
     purchased_tee = db.Column(db.Boolean, default=False, nullable=True)
     #: Date of registration
     regdate = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    #:NFC ID
+    #: NFC ID
     nfc_id = db.Column(db.Unicode(80), nullable=True, default=None)
+    #: Public key - key for looking up records at Kiosk
+    public = db.Column(db.Unicode(4), nullable=False, default=None)
+    #: Secret - secret key for AES encryption
+    secret = db.Column(db.Unicode(20), nullable=False, default=None)
     #: Source of registration, whether online(True) or offline(False)
     online_reg = db.Column(db.Boolean, default=True, nullable=True)
     #: Order ID

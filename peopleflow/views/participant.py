@@ -4,7 +4,7 @@
 from . import nav
 from .. import app
 from .. import lastuser
-from ..models import db, Event, Participant
+from ..models import db, Event, Participant, rand_printable_string
 from ..forms import ParticipantForm
 from ..helpers.printlabel import printlabel, make_label_content
 from datetime import datetime, timedelta
@@ -45,6 +45,8 @@ def add_new_participant(event):
         participant.twitter = participant.twitter.replace('@','').strip()
         participant.purchases = u','.join(participant.purchases)
         participant.online_reg = False
+        participant.public = rand_printable_string(4)
+        participant.secret = rand_printable_string(6)
         participant.event_id = event.id
         db.session.add(participant)
         try:
