@@ -1,8 +1,11 @@
 
-from . import db, BaseMixin
 from datetime import datetime
 import random
+from base64 import b64encode
 
+from Crypto.Cipher import AES
+
+from . import db, BaseMixin
 
 TSHIRT_SIZES = [
     ('0',  u''),
@@ -22,6 +25,44 @@ def rand_printable_string(length):
     for i in range(0, length):
         chars[i] = random.choice(PRINTABLE_ASCII)
     return "".join(chars)
+
+def pad16x(string):
+    extra = len(string) % 16
+    if extra > 0:
+        return string + 'x' * (16 - extra)
+    else: return string
+
+def pad_secret(secret, n=16):
+    assert(len(secret) <= n)
+    padn = n - len(secret)
+    return secret + 'x' * padn
+
+def encrypt_field(aes, x):
+    n = len(x)
+    return dict(n=n, d=b64encode(aes.encrypt(pad16x(x))))
+
+def encrypt_participant(row):
+
+    # TODO: make this configurable
+    IV456 = "must be 16 bytes"
+
+    # Fields to export
+    FIELDS = [ "name"
+             , "email"
+             , "phone"
+             , "company"
+             , "city"
+             , "twitter"
+             ]
+
+    # Encrypt each row
+    aes = AES.new(pad_secret(row.secret, 16), AES.MODE_CBC, IV456)
+    return dict(zip(FIELDS,
+                    [encrypt_field(aes, str(getattr(row, f))) \
+                        for f in FIELDS])
+                , id=row.id
+                , public=row.public
+           )
 
 class Participant(db.Model, BaseMixin):
   

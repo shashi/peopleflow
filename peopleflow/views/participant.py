@@ -4,7 +4,7 @@
 from . import nav
 from .. import app
 from .. import lastuser
-from ..models import db, Event, Participant, rand_printable_string
+from ..models import db, Event, Participant, encrypt_participant
 from ..forms import ParticipantForm
 from ..helpers.printlabel import printlabel, make_label_content
 from datetime import datetime, timedelta
@@ -83,17 +83,10 @@ def get_participant(event, nfc_id):
 @app.route('/event/<event>/participants', methods=["GET"])
 @lastuser.requires_permission(['kioskadmin'])
 def get_participants(event):
-        try:
-            participants = Participant.query.all()
-            response = { 'participants': []}
-            for participant in participants:
-                response['participants'] += [
-                    dict(id=participant.id,name=participant.name,email=participant.email,twitter=participant.twitter,nfc_id=participant.nfc_id)
-                    ]
-            return jsonp(response)
-        except:
-            response = jsonp(error="invalid")
-        return response
+        participants = Participant.query.all()
+        return jsonp(dict(
+            participants=map(encrypt_participant, participants)
+        ))
 
 @app.route('/event/<event>/participant/<participant>/print_card', methods=['POST'])
 @lastuser.requires_permission(['kioskadmin', 'registrations'])
