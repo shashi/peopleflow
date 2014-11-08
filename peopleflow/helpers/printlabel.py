@@ -3,6 +3,7 @@
 import tempfile
 import argparse
 import os, time
+from reportlab.graphics.barcode import code128
 from reportlab.lib.units import mm
 from reportlab.lib.enums import TA_CENTER
 from reportlab.platypus import SimpleDocTemplate, Paragraph
@@ -10,8 +11,36 @@ from reportlab.platypus.flowables import HRFlowable
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.colors import Color
 
+import random
+
+PRINTABLE_ASCII = map(chr, range(32, 127))
+
+def rand_printable_string(length):
+    chars = ['x'] * length
+    for i in range(0, length):
+        chars[i] = random.choice(PRINTABLE_ASCII)
+    return "".join(chars)
+def drawbarcode(canvas, document, data):
+    print dir(document)
+    bars = code128.Code128(data, barHeight=40, barWidth=1.25)
+    print "Code ", dir(bars)
+    print "Printashe", document.width, document.leftMargin, document.rightMargin
+    bars.drawOn(canvas, 0, 40)
 
 def printlabel(printer, print_type, lines, options={}):
+    printfile(printer, 
+        makelabelfile(printer, print_type, lines, options))
+    
+def printfile(printer, fname):
+    os.system("lpr -o page-ranges=1 -P %s %s" % (printer, fname))
+    time.sleep(2)
+    os.unlink(fname)
+    
+def makelabelfile(print_type, lines, options={}):
+
+    if print_type == 'barcode':
+        options.update(barcode=True)
+        return makelabelfile('floppy', lines, options)
 
     f = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
     fname = f.name
@@ -76,11 +105,13 @@ def printlabel(printer, print_type, lines, options={}):
                 story.append(HRFlowable(width='95%', spaceBefore=3, thickness=2, color=options['hr_color'] if 'hr_color' in options and options['hr_color'] else "#777777"))
     if 'label' in options and options['label']:
         story = story[-1:] + story[:-1]
-    doc.build(story)
 
-    os.system("lpr -o page-ranges=1 -P %s %s" % (printer, fname))
-    time.sleep(2)
-    os.unlink(fname)
+    if options.get('barcode', False):
+        doc.build(story, onFirstPage=lambda c, d: drawbarcode(c, d, lines[-1])) # -1? This is a new low point in my life
+    else:
+        doc.build(story)
+
+    return fname
 
 def make_label_content(participant):
     data = [participant.name]
@@ -95,6 +126,7 @@ def make_label_content(participant):
         data.append('@' + participant.twitter)
     else:
         data.append(None)
+    data.append(participant.public + participant.secret)
     return data
 
 
@@ -104,6 +136,7 @@ if __name__ == '__main__':
     parser.add_argument('--lines', type=int, help='The number of lines to print', default=3)
     parser.add_argument('--type', type=str, help='Print type. Either label or badge', default='label')
     args = parser.parse_args()
-    data = ["Kiran Jonnalagadda isn't long enough", "CEO, HasGeek Media LLP.", "@jackerhack", "CREW"]
+    randstr = rand_printable_string(10)
+    data = ["Kiran Jonnalagadda isn't long enough", "CEO, HasGeek Media LLP.", randstr, "CREW", randstr]
     data = data[:args.lines]
-    printlabel(args.printer, args.type, data)
+    os.system("evince " + makelabelfile(args.type, data))
