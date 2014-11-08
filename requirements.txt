@@ -3,7 +3,7 @@ https://github.com/hasgeek/coaster/archive/master.zip
 https://github.com/hasgeek/baseframe/archive/master.zip
 Flask-SQLAlchemy
 https://github.com/hasgeek/flask-lastuser/archive/master.zip
-Flask-Script
+Flask-Script==0.5.3
 https://github.com/jace/flask-alembic/archive/master.zip
 Flask-RQ
 Flask-Mail
