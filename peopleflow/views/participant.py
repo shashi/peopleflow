@@ -4,7 +4,7 @@
 from . import nav
 from .. import app
 from .. import lastuser
-from ..models import db, Event, Participant
+from ..models import db, Event, Participant, encrypt_participant, rand_printable_string
 from ..forms import ParticipantForm
 from ..helpers.printlabel import printlabel, make_label_content
 from datetime import datetime, timedelta
@@ -45,6 +45,8 @@ def add_new_participant(event):
         participant.twitter = participant.twitter.replace('@','').strip()
         participant.purchases = u','.join(participant.purchases)
         participant.online_reg = False
+        participant.public = rand_printable_string(4)
+        participant.secret = rand_printable_string(6)
         participant.event_id = event.id
         db.session.add(participant)
         try:
@@ -77,6 +79,14 @@ def get_participant(event, nfc_id):
         except:
             response = jsonp(error="invalid")
         return response
+
+@app.route('/event/<event>/participants', methods=["GET"])
+@lastuser.requires_permission(['kioskadmin'])
+def get_participants(event):
+        participants = Participant.query.all()
+        return jsonp(dict(
+            participants=dict(map(encrypt_participant, participants))
+        ))
 
 @app.route('/event/<event>/participant/<participant>/print_card', methods=['POST'])
 @lastuser.requires_permission(['kioskadmin', 'registrations'])
