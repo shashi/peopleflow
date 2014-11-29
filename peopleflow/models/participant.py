@@ -1,9 +1,10 @@
 
+import json
+
 from datetime import datetime
 import random
-from base64 import b64encode
 
-from Crypto.Cipher import AES
+from ..helpers import crypto
 
 from . import db, BaseMixin
 
@@ -17,51 +18,6 @@ TSHIRT_SIZES = [
     ('6', u'XXL'),
     ('7', u'XXXL'),
     ]
-
-PRINTABLE_ASCII = map(chr, range(32, 127))
-
-def rand_printable_string(length):
-    chars = ['x'] * length
-    for i in range(0, length):
-        chars[i] = random.choice(PRINTABLE_ASCII)
-    return "".join(chars)
-
-def pad16x(string):
-    extra = len(string) % 16
-    if extra > 0:
-        return string + 'x' * (16 - extra)
-    else: return string
-
-def pad_secret(secret, n=16):
-    assert(len(secret) <= n)
-    padn = n - len(secret)
-    return secret + 'x' * padn
-
-def encrypt_field(aes, x):
-    n = len(x)
-    return dict(n=n, d=b64encode(aes.encrypt(pad16x(x))))
-
-def encrypt_participant(row):
-
-    # TODO: make this configurable
-    IV456 = "must be 16 bytes"
-
-    # Fields to export
-    FIELDS = [ "name"
-             , "email"
-             , "phone"
-             , "company"
-             , "city"
-             , "twitter"
-             ]
-
-    # Encrypt each row
-    aes = AES.new(pad_secret(row.secret, 16), AES.MODE_CBC, IV456)
-    return row.public, dict(zip(FIELDS,
-                    [encrypt_field(aes, str(getattr(row, f))) \
-                        for f in FIELDS])
-                , id=row.id
-           )
 
 class Participant(db.Model, BaseMixin):
   
@@ -112,3 +68,26 @@ class Participant(db.Model, BaseMixin):
 
     def __repr__(self):
         return self.name
+
+    def encrypt(self):
+
+        # Fields to export
+        FIELDS = [ "id"
+                 , "name"
+                 , "email"
+                 , "phone"
+                 , "company"
+                 , "city"
+                 , "twitter"
+                 ]
+
+        print "BARCODE", self.public+self.secret
+        return self.public, \
+               crypto.encrypt_string(
+                   json.dumps(dict(zip(
+                       FIELDS, map(lambda k: getattr(self, k),
+                            FIELDS)))
+                   ),
+                   # we need a 32-byte hex string here.
+                   crypto.nbyte_digest(self.secret, 32)
+                )

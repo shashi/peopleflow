@@ -4,9 +4,10 @@
 from . import nav
 from .. import app
 from .. import lastuser
-from ..models import db, Event, Participant, encrypt_participant, rand_printable_string
+from ..models import db, Event, Participant
 from ..forms import ParticipantForm
 from ..helpers.printlabel import printlabel, make_label_content
+from ..helpers.crypto import rand_printable_string
 from datetime import datetime, timedelta
 from time import strftime
 from flask import request, flash, url_for, render_template, jsonify
@@ -85,7 +86,7 @@ def get_participant(event, nfc_id):
 def get_participants(event):
         participants = Participant.query.all()
         return jsonp(dict(
-            participants=dict(map(encrypt_participant, participants))
+            participants=dict(map(Participant.encrypt, participants))
         ))
 
 @app.route('/event/<event>/participant/<participant>/print_card', methods=['POST'])

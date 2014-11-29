@@ -18,6 +18,7 @@ from coaster.utils import make_name
 from coaster.views import jsonp, load_model, load_models
 from coaster.gfm import markdown
 from flask.ext.mail import Mail, Message
+from sqlalchemy.exc import DataError
 
 
 @app.route('/event/<id>/kiosk/new', methods=['GET', 'POST'])
@@ -109,6 +110,50 @@ def kiosk(event, kiosk):
         kiosk.privacy_policy = Markup(kiosk.privacy_policy)
         return render_template('kiosk.html', kiosk=kiosk, event=event)
 
+@app.route('/event/<event>/kiosk/<kiosk>/share_sync',methods=['GET', 'POST'])
+@load_models(
+    (Kiosk, {'id': 'kiosk', 'event_id': 'event'}, 'kiosk'),
+    (Event, {'id':'event'}, 'event'),
+    )
+@lastuser.requires_permission('kioskadmin')
+def approve_share(event, kiosk):
+    if request.method=='POST':
+        resp_json = dict()
+        secrets = request.get_json(force=True)
+        print secrets
+        for p_id in secrets:
+            try:
+                participant = Participant.query.filter_by(
+                        event=event,
+                        id=p_id
+                ).first()
+            except DataError:
+                resp_json[p_id] = 500
+                continue
+            except:
+                # NOTE: 503 tells the client to
+                # retry this id in the next sync
+                # FIXME??
+                resp_json[p_id] = 503
+                continue
+
+
+            if participant is None:
+                resp_json[p_id] = 404
+                continue
+
+            if participant.secret != secrets[p_id]:
+                resp_json[p_id] = 403
+                continue
+
+            if participant not in kiosk.participants:
+                kiosk.participants.append(participant)
+
+            resp_json[p_id] = 200
+
+        db.session.commit()
+
+        return jsonify(resp_json)
 
 @app.route('/event/<event>/kiosk/<kiosk>/subscribe',methods=['GET', 'POST'])
 @load_models(
