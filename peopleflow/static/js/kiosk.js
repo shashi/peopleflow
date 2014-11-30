@@ -45,7 +45,7 @@ var getParticipantFromBarcode = function (code) {
         return null // This should show a dialog
     } else {
         var participant = decryptParticipant(cryptext, secret)
-            console.log(participant)
+        //console.log(participant)
         participant.public = public
         participant.secret = secret
         return participant
@@ -244,7 +244,7 @@ window.addEventListener("keypress", function (ev) {
         clearTimeout(prevTimeout)
     } else {
         codeAcc = codeAcc + chr
-        console.log(codeAcc)
+        //console.log(codeAcc)
         clearTimeout(prevTimeout)
         prevTimeout = setTimeout(
             function () { codeAcc ="" },
@@ -266,17 +266,20 @@ var refreshParticipants = function(){
                 makePath("participants", "encrypted"))
             participants = data['participants']
             // Re fill participant localStorage
+            var i = 0
             for (var key in participants){
                 if (!participants.hasOwnProperty(key)){
                     continue;
-                } 
-                console.log("storing ", participants[key])
+                }
+                //console.log("Refreshing ", participants[key])
                 setLocalStorageObject(
                     makePath("participants", "encrypted"),
                     key,
                     participants[key]
                 )
+                i += 1
             }
+            console.log("User data refreshed. Count:", i, "Timestamp:", (new Date).toISOString())
         }
     })
 }
