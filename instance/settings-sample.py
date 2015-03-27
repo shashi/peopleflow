@@ -48,3 +48,7 @@ DOATTEND_EMAIL = ''
 DOATTEND_PASS = ''
 
 PRINTER_NAME = 'Brother-QL-570'
+
+BADGE_TEMPLATE = "../peopleflow/helpers/badge-template.svg"
+BARCODE_OFFSET = (25, 325)
+BARCODE_SIZE = (75, 300)

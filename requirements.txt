@@ -15,4 +15,5 @@ gevent
 gunicorn
 reportlab
 psycopg2
-pycrypto
+pycrypto==2.7a1
+code128

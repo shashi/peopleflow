@@ -6,7 +6,7 @@ from .. import app
 from .. import lastuser
 from ..models import db, Event, Participant
 from ..forms import ParticipantForm
-from ..helpers.printlabel import printlabel, make_label_content
+from ..helpers.printlabel import printlabel
 from ..helpers.crypto import rand_printable_string
 from datetime import datetime, timedelta
 from time import strftime
@@ -103,7 +103,13 @@ def print_card(event, participant):
                 options.update(dict((option, value) for option, value in event.speaker_options.iteritems() if value))
             elif 'Crew' in participant.purchases:
                 options.update(dict((option, value) for option, value in event.crew_options.iteritems() if value))
-            printlabel(app.config['PRINTER_NAME'], event.print_type, make_label_content(participant), options)
+            printlabel(participant,
+                       options,
+                       app.config['PRINTER_NAME'],
+                       app.config['BADGE_TEMPLATE'],
+                       app.config['BARCODE_SIZE'],
+                       app.config['BARCODE_OFFSET']
+                       )
             return jsonify(status=True, msg=u"Label for %s queued for printing" % participant.name)
         else:
             return jsonify(status=False, msg=u"Printer not configured")

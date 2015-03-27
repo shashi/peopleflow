@@ -81,7 +81,6 @@ class Participant(db.Model, BaseMixin):
                  , "twitter"
                  ]
 
-        print "BARCODE", self.public+self.secret
         return self.public, \
                crypto.encrypt_string(
                    json.dumps(dict(zip(
